@@ -25,6 +25,8 @@ import (
 // Mounter is an interface for mount operations
 type Mounter interface {
 	mount.Interface
+	IsCorruptedMnt(err error) bool
+	PathExists(path string) (bool, error)
 	MakeDir(pathname string) error
 }
 
@@ -46,4 +48,24 @@ func (m *NodeMounter) MakeDir(pathname string) error {
 		}
 	}
 	return nil
+}
+
+// IsCorruptedMnt return true if err is about corrupted mount point
+func (m NodeMounter) IsCorruptedMnt(err error) bool {
+	return mount.IsCorruptedMnt(err)
+}
+
+// This function is mirrored in ./sanity_test.go to make sure sanity test covered this block of code
+// Please mirror the change to func MakeFile in ./sanity_test.go
+//func (m *NodeMounter) PathExists(path string) (bool, error) {
+//	return mount.PathExists(path)
+//}
+
+func (m *NodeMounter) PathExists(path string) (bool, error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
 }
